@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quartz.Spi.CosmosDbJobStore", "src\Quartz.Spi.CosmosDbJobStore\Quartz.Spi.CosmosDbJobStore.csproj", "{FE1A8620-C292-4979-B665-29F472A30738}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quartz.Spi.CosmosDbJobStore.Tests", "test\Quartz.Spi.CosmosDbJobStore.Tests\Quartz.Spi.CosmosDbJobStore.Tests.csproj", "{9840F9A3-A846-43E5-9576-6ED197B4451B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FE1A8620-C292-4979-B665-29F472A30738}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE1A8620-C292-4979-B665-29F472A30738}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE1A8620-C292-4979-B665-29F472A30738}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE1A8620-C292-4979-B665-29F472A30738}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9840F9A3-A846-43E5-9576-6ED197B4451B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9840F9A3-A846-43E5-9576-6ED197B4451B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9840F9A3-A846-43E5-9576-6ED197B4451B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9840F9A3-A846-43E5-9576-6ED197B4451B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

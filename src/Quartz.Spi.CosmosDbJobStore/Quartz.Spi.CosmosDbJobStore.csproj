@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AssemblyName>Quartz.Spi.CosmosDbJobStore</AssemblyName>
+        <RootNamespace>Quartz.Spi.CosmosDbJobStore</RootNamespace>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Common.Logging" Version="3.4.1" />
+      <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="2.1.1" />
+      <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+      <PackageReference Include="Quartz" Version="3.0.6" />
+      <PackageReference Include="Quartz.Serialization.Json" Version="3.0.6" />
+    </ItemGroup>
+
+</Project>

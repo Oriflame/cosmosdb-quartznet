@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>Quartz.Spi.CosmosDbJobStore</id>
+        <version>$version$</version>
+        <title>CosmosDb Job Store for Quartz.NET</title>
+        <authors>Frantisek Jandos</authors>
+        <owners>oriflamesoftware</owners>
+        <licenseUrl>https://github.com/Oriflame/cosmosdb-quartznet/blob/master/LICENSE.txt</licenseUrl>
+        <projectUrl>https://github.com/Oriflame/cosmosdb-quartznet</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>A CosmosDb job store for Quartz.NET. This library targets the Microsoft.Azure.DocumentDB.Core 2.0 driver.</description>
+        <dependencies>
+            <group targetFramework="netstandard2.0">
+                <dependency id="Microsoft.Azure.DocumentDB.Core" version="2.4.2" />
+                <dependency id="Quartz" version="3.0.6" />
+                <dependency id="Quartz.Serialization.Json" version="3.0.6" />
+				<dependency id="Newtonsoft.Json" version="11.0.2" />
+            </group>
+        </dependencies>
+    </metadata>
+</package>
