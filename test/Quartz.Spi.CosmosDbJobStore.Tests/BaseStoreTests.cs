@@ -15,7 +15,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
         {
             var properties = new NameValueCollection
             {
-                ["quartz.serializer.type"] = "json",
+                [$"{StdSchedulerFactory.PropertyObjectSerializer}.type"] = "json",
                 [StdSchedulerFactory.PropertySchedulerInstanceName] = instanceName,
                 [StdSchedulerFactory.PropertySchedulerInstanceId] = $"{Environment.MachineName}-{Guid.NewGuid()}",
                 [StdSchedulerFactory.PropertyJobStoreType] = typeof(CosmosDbJobStore).AssemblyQualifiedName,
