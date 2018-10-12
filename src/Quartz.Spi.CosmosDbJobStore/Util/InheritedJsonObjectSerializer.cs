@@ -17,6 +17,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Util
             var settings = base.CreateSerializerSettings();
             
             settings.Converters.Add(new TimeOfDayConverter());
+            settings.TypeNameHandling = TypeNameHandling.All;
             
             return settings;
         }
