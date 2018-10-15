@@ -5,6 +5,15 @@
         <AssemblyName>Quartz.Spi.CosmosDbJobStore</AssemblyName>
         <RootNamespace>Quartz.Spi.CosmosDbJobStore</RootNamespace>
         <LangVersion>latest</LangVersion>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>0.5.1</Version>
+        <Authors>Frantisek Jandos</Authors>
+        <Company>Oriflame Software</Company>
+        <PackageLicenseUrl>https://github.com/Oriflame/cosmosdb-quartznet/blob/master/LICENSE.txt</PackageLicenseUrl>
+        <PackageProjectUrl>https://github.com/Oriflame/cosmosdb-quartznet</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Oriflame/cosmosdb-quartznet</RepositoryUrl>
+        <Description>A CosmosDb job store for Quartz.NET. This library targets the Microsoft.Azure.DocumentDB.Core 2.0 driver.</Description>
+        <PackageReleaseNotes>Fixed JSON serialization issue</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
