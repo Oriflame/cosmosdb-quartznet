@@ -42,7 +42,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Entities
             FireInstanceId = firedInstanceId;
             TriggerName = trigger.Name;
             TriggerGroup = trigger.Group;
-            Fired = DateTimeOffset.Now;
+            Fired = DateTimeOffset.UtcNow;
             Scheduled = trigger.NextFireTime;
             Priority = trigger.Priority;
             State = trigger.State;

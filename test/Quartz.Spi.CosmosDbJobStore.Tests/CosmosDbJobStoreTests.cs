@@ -168,6 +168,41 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
            pausedGroups = await _scheduler.GetPausedTriggerGroups();
            (pausedGroups).Should().BeEmpty("Size of paused trigger groups list expected to be 0 ");
         }
+        
+        [Fact]
+        public async Task TestRetry()
+        {
+           // Arrange
+           var job = JobBuilder.Create<UnreliableJob>()
+               .WithIdentity("j1")
+               .RequestRecovery(true)
+               .Build();
+
+           var trigger = TriggerBuilder.Create()
+               .WithIdentity("t1")
+               .WithSimpleSchedule(x => x.WithMisfireHandlingInstructionIgnoreMisfires())
+               .ForJob(job)
+               .StartNow()
+               .Build();
+
+           await _scheduler.ScheduleJob(job, trigger);
+           
+           await _scheduler.Start();
+
+           for (var i = 0; i < 100; i++)
+           {
+               if (UnreliableJob.Finished)
+               {
+                   break;
+               }
+               
+               Thread.Sleep(500);
+           }
+           
+           await _scheduler.Shutdown(true);
+           
+           Assert.True(UnreliableJob.Finished);
+        }
 
         [Fact]
         public async Task SchedulingTest()

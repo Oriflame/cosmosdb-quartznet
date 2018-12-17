@@ -144,6 +144,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         
         public CosmosDbJobStore()
         {
+            ClusterCheckinInterval = TimeSpan.FromMilliseconds(7500);
             MaxMisfiresToHandleAtATime = 20;
             RetryableActionErrorLogThreshold = 4;
             DbRetryInterval = TimeSpan.FromSeconds(15);
@@ -193,7 +194,7 @@ namespace Quartz.Spi.CosmosDbJobStore
            
             await _schedulerRepository.Update(new PersistentScheduler(InstanceName, InstanceId)
             {
-                LastCheckIn = DateTimeOffset.Now
+                LastCheckIn = DateTimeOffset.UtcNow
             });           
 
             _misfireHandler = new MisfireHandler(this);
@@ -1147,7 +1148,7 @@ namespace Quartz.Spi.CosmosDbJobStore
 
             try
             {
-                await _firedTriggerRepository.Delete(trigger.FireInstanceId);
+                await _firedTriggerRepository.Delete(PersistentFiredTrigger.GetId(InstanceName, trigger.FireInstanceId));
             }
             catch (Exception ex)
             {

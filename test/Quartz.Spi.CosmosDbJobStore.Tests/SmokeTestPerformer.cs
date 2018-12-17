@@ -252,7 +252,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
                     genericJob.Should().NotBeNull();
                     await scheduler.TriggerJob(genericjobKey);
 
-                    Thread.Sleep(TimeSpan.FromSeconds(20));
+                    Thread.Sleep(TimeSpan.FromSeconds(30));
 
                     GenericJobType<string>.TriggeredCount.Should().Be(1);
                     await scheduler.Standby();

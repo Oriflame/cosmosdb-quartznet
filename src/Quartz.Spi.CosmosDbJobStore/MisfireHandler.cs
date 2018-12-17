@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Common.Logging;
 using Quartz.Impl.AdoJobStore;
 using Quartz.Spi.CosmosDbJobStore.Util;
 
@@ -10,6 +11,8 @@ namespace Quartz.Spi.CosmosDbJobStore
     /// </summary>
     internal class MisfireHandler : QuartzThread
     {
+        private static readonly ILog _logger = LogManager.GetLogger<MisfireHandler>();
+        
         private readonly CosmosDbJobStore _jobStore;
         private bool _shutdown;
         private int _numFails;
@@ -74,7 +77,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-//                Log.Debug("Scanning for misfires...");
+                _logger.Debug("Scanning for misfires...");
                 var result = _jobStore.DoRecoverMisfires().Result;
                 _numFails = 0;
                 return result;
@@ -83,7 +86,7 @@ namespace Quartz.Spi.CosmosDbJobStore
             {
                 if (_numFails % _jobStore.RetryableActionErrorLogThreshold == 0)
                 {
-//                    Log.Error($"Error handling misfires: {ex.Message}", ex);
+                    _logger.Error($"Error handling misfires: {ex.Message}", ex);
                 }
                 _numFails++;
             }

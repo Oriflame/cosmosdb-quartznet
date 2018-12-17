@@ -48,8 +48,8 @@ namespace Quartz.Spi.CosmosDbJobStore.Entities
             JobGroup = trigger.JobKey.Group;
             JobName = trigger.JobKey.Name;
             Description = trigger.Description;
-            NextFireTime = trigger.GetNextFireTimeUtc();
-            PreviousFireTime = trigger.GetPreviousFireTimeUtc();
+            NextFireTime = trigger.GetNextFireTimeUtc()?.ToUniversalTime();
+            PreviousFireTime = trigger.GetPreviousFireTimeUtc()?.ToUniversalTime();
             State = state;
             StartTime = trigger.StartTimeUtc;
             EndTime = trigger.EndTimeUtc;
@@ -72,8 +72,8 @@ namespace Quartz.Spi.CosmosDbJobStore.Entities
             trigger.StartTimeUtc = StartTime;
             trigger.EndTimeUtc = EndTime;
             trigger.Priority = Priority;
-            trigger.SetNextFireTimeUtc(NextFireTime);
-            trigger.SetPreviousFireTimeUtc(PreviousFireTime);
+            trigger.SetNextFireTimeUtc(NextFireTime?.ToUniversalTime());
+            trigger.SetPreviousFireTimeUtc(PreviousFireTime?.ToUniversalTime());
         }
         
         public abstract ITrigger GetTrigger();

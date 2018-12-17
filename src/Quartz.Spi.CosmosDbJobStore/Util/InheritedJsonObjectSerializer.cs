@@ -18,6 +18,9 @@ namespace Quartz.Spi.CosmosDbJobStore.Util
             
             settings.Converters.Add(new TimeOfDayConverter());
             settings.TypeNameHandling = TypeNameHandling.All;
+            settings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
+            settings.DateParseHandling = DateParseHandling.DateTimeOffset;
+            settings.DateTimeZoneHandling = DateTimeZoneHandling.Utc; // This is important, as DateTimeOffset used in queries is parsed as UTC!
             
             return settings;
         }
