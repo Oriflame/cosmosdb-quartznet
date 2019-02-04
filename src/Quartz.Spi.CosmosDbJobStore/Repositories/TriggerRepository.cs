@@ -15,54 +15,54 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         }
 
         
-        public async Task<IList<PersistentTriggerBase>> GetAllByJob(string jobName, string jobGroup)
+        public Task<IList<PersistentTriggerBase>> GetAllByJob(string jobName, string jobGroup)
         {
-            return _documentClient
+            return Task.FromResult<IList<PersistentTriggerBase>>(_documentClient
                 .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobGroup && x.JobName == jobName)
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
         
-        public async Task<IList<PersistentTriggerBase>> GetAllByJobAndState(JobKey jobKey, PersistentTriggerState state)
+        public Task<IList<PersistentTriggerBase>> GetAllByJobAndState(JobKey jobKey, PersistentTriggerState state)
         {
-            return _documentClient
+            return Task.FromResult<IList<PersistentTriggerBase>>(_documentClient
                 .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobKey.Group && x.JobName == jobKey.Name && x.State == state)
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
         
-        public async Task<int> CountByJob(string jobName, string jobGroup)
+        public Task<int> CountByJob(string jobName, string jobGroup)
         {
-            return _documentClient
+            return Task.FromResult(_documentClient
                 .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
-                .Count(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobGroup && x.JobName == jobName);
+                .Count(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobGroup && x.JobName == jobName));
         }
         
-        public async Task<IList<PersistentTriggerBase>> GetAllCompleteByCalendar(string calendarName)
+        public Task<IList<PersistentTriggerBase>> GetAllCompleteByCalendar(string calendarName)
         {
-            return _documentClient
+            return Task.FromResult<IList<PersistentTriggerBase>>(_documentClient
                 .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.CalendarName == calendarName)
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
 
-        public async Task<bool> ExistsByCalendar(string calendarName)
+        public Task<bool> ExistsByCalendar(string calendarName)
         {
-            return _documentClient
+            return Task.FromResult(_documentClient
                 .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.CalendarName == calendarName)
                 .Take(1)
                 .AsEnumerable()
-                .Any();
+                .Any());
         }
         
-        public async Task<int> GetMisfireCount(DateTimeOffset nextFireTime)
+        public Task<int> GetMisfireCount(DateTimeOffset nextFireTime)
         {
-            return _documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
-                .Count(x => x.Type == _type && x.InstanceName == _instanceName && x.MisfireInstruction != MisfireInstruction.IgnoreMisfirePolicy && x.NextFireTime < nextFireTime && x.State == PersistentTriggerState.Waiting);
+            return Task.FromResult(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
+                .Count(x => x.Type == _type && x.InstanceName == _instanceName && x.MisfireInstruction != MisfireInstruction.IgnoreMisfirePolicy && x.NextFireTime < nextFireTime && x.State == PersistentTriggerState.Waiting));
         }
         
         /// <summary>
@@ -70,25 +70,24 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         /// misfired - according to the given timestamp.  No more than count will be returned.
         /// </summary>
         /// <param name="nextFireTime"></param>
-        /// <param name="maxResults"></param>
-        /// <param name="results"></param>
+        /// <param name="limit"></param>
         /// <returns></returns>
-        public async Task<IList<PersistentTriggerBase>> GetAllMisfired(DateTimeOffset nextFireTime, int limit)
+        public Task<IList<PersistentTriggerBase>> GetAllMisfired(DateTimeOffset nextFireTime, int limit)
         {
-            return _documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
+            return Task.FromResult<IList<PersistentTriggerBase>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.MisfireInstruction != MisfireInstruction.IgnoreMisfirePolicy && x.NextFireTime < nextFireTime && x.State == PersistentTriggerState.Waiting)
                 .OrderBy(x => x.NextFireTime) // Note that Cosmos can't do it at the moment :-( .ThenByDescending(x => x.Priority)
                 .Take(limit)
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
         
-        public async Task<List<PersistentTriggerBase>> GetAllByState(params PersistentTriggerState[] states)
+        public Task<List<PersistentTriggerBase>> GetAllByState(params PersistentTriggerState[] states)
         {
-            return _documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
+            return Task.FromResult<List<PersistentTriggerBase>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && states.Contains(x.State))
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
 
         public async Task<int> UpdateAllByStates(PersistentTriggerState newState, params PersistentTriggerState[] oldStates)
@@ -103,31 +102,31 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
             return triggers.Count;
         }
 
-        public async Task<IReadOnlyCollection<string>> GetGroups()
+        public Task<IReadOnlyCollection<string>> GetGroups()
         {
-            return _documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
+            return Task.FromResult<IReadOnlyCollection<string>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName)
                 .Select(x => x.Group)
                 .AsEnumerable()
                 .Distinct()
-                .ToList();
+                .ToList());
         }
         
-        public async Task<List<PersistentTriggerBase>> GetAllToAcquire(DateTimeOffset noLaterThan, DateTimeOffset noEarlierThan, int maxCount)
+        public Task<List<PersistentTriggerBase>> GetAllToAcquire(DateTimeOffset noLaterThan, DateTimeOffset noEarlierThan, int maxCount)
         {
             if (maxCount < 1)
             {
                 maxCount = 1;
             }
 
-            return _documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
+            return Task.FromResult<List<PersistentTriggerBase>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName 
                                             && x.State == PersistentTriggerState.Waiting && x.NextFireTime <= noLaterThan 
                                             && (x.MisfireInstruction == -1 || (x.MisfireInstruction != -1 && x.NextFireTime >= noEarlierThan)))
                 .OrderBy(x => x.NextFireTime) // Cosmos can't do this! .ThenByDescending(x => x.Priority)
                 .Take(maxCount)
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
     }
 }

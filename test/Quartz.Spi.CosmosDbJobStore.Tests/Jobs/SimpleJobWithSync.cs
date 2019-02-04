@@ -21,7 +21,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests.Jobs
             catch (Exception e)
             {
                 Console.Write(e);
-                throw e;
+                throw;
             }
 
             return Task.FromResult(0);

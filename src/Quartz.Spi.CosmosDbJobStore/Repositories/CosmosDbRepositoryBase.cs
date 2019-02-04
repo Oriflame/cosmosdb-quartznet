@@ -79,7 +79,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
                 }
                 catch (DocumentClientException dce)
                 {
-                    _logger.Warn($"Creation of {this.GetType().Name} collection failed, it might have been created by another instance.", dce);
+                    _logger.Warn($"Creation of {GetType().Name} collection failed, it might have been created by another instance.", dce);
                 }
             }            
         }
@@ -97,14 +97,14 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
             }
         }
         
-        public async Task<bool> Exists(string id)
+        public Task<bool> Exists(string id)
         {
-            return _documentClient
+            return Task.FromResult(_documentClient
                 .CreateDocumentQuery<TEntity>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.Id == id)
                 .Take(1)
                 .AsEnumerable()
-                .Any();
+                .Any());
         }
 
         public Task Update(TEntity entity)
@@ -130,19 +130,19 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
             }
         }
         
-        public async Task<int> Count()
+        public Task<int> Count()
         {
-            return _documentClient
+            return Task.FromResult(_documentClient
                 .CreateDocumentQuery<TEntity>(_collectionUri)
-                .Count(x => x.Type == _type && x.InstanceName == _instanceName);
+                .Count(x => x.Type == _type && x.InstanceName == _instanceName));
         }
         
-        public async Task<IList<TEntity>> GetAll()
+        public Task<IList<TEntity>> GetAll()
         {
-            return _documentClient.CreateDocumentQuery<TEntity>(_collectionUri)
+            return Task.FromResult((IList<TEntity>)_documentClient.CreateDocumentQuery<TEntity>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName)
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
         
         public async Task DeleteAll()
