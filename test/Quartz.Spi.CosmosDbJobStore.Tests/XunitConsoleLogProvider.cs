@@ -21,7 +21,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
             {
                 if (level >= LogLevel.Debug && func != null)
                 {
-                    output.WriteLine("[" + DateTime.Now.ToLongTimeString() + "] [" + level + "] " + func(), parameters);
+                    output.WriteLine("[" + DateTime.Now.ToString("hh:mm:ss.FFF") + "] [" + level + "] " + func(), parameters);
                 }
                 return true;
             };

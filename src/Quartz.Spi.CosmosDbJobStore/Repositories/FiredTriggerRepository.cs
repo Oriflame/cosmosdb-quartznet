@@ -14,31 +14,31 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         }
 
 
-        public async Task<IList<PersistentFiredTrigger>> GetAllByJob(string jobName, string jobGroup)
+        public Task<IList<PersistentFiredTrigger>> GetAllByJob(string jobName, string jobGroup)
         {
-            return _documentClient
+            return Task.FromResult<IList<PersistentFiredTrigger>>(_documentClient
                 .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobGroup && x.JobName == jobName)
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
 
-        public async Task<IList<PersistentFiredTrigger>> GetAllRecoverableByInstanceId(string instanceId)
+        public Task<IList<PersistentFiredTrigger>> GetAllRecoverableByInstanceId(string instanceId)
         {
-            return _documentClient
+            return Task.FromResult<IList<PersistentFiredTrigger>>(_documentClient
                 .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.InstanceId == instanceId && x.RequestsRecovery)
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
         
-        public async Task<IList<PersistentFiredTrigger>> GetAllByInstanceId(string instanceId)
+        public Task<IList<PersistentFiredTrigger>> GetAllByInstanceId(string instanceId)
         {
-            return _documentClient
+            return Task.FromResult<IList<PersistentFiredTrigger>>(_documentClient
                 .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.InstanceId == instanceId)
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
 
         /// <summary>
@@ -65,13 +65,13 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
             return triggers.Count;
         }
 
-        public async Task<IList<PersistentFiredTrigger>> GetAllByTrigger(string triggerKeyName, string triggerKeyGroup)
+        public Task<IList<PersistentFiredTrigger>> GetAllByTrigger(string triggerKeyName, string triggerKeyGroup)
         {
-            return _documentClient
+            return Task.FromResult<IList<PersistentFiredTrigger>>(_documentClient
                 .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.TriggerGroup == triggerKeyGroup && (x.TriggerName == null || x.TriggerName == triggerKeyName))
                 .AsEnumerable()
-                .ToList();
+                .ToList());
         }
     }
 }

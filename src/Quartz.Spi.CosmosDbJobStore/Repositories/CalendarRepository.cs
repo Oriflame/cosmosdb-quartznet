@@ -14,15 +14,15 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         }
 
 
-        public async Task<IReadOnlyCollection<string>> GetCalendarNames()
+        public Task<IReadOnlyCollection<string>> GetCalendarNames()
         {
-            return _documentClient
+            return Task.FromResult((IReadOnlyCollection<string>)_documentClient
                 .CreateDocumentQuery<PersistentCalendar>(_collectionUri)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName)
                 .Select(x => x.CalendarName)
                 .AsEnumerable()
                 .Distinct()
-                .ToList();
+                .ToList());
         } 
     }
 }

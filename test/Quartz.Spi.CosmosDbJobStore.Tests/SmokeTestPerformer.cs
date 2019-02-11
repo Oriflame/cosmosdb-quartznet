@@ -12,13 +12,18 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
 {
     public class SmokeTestPerformer
     {
-        public async Task Test(IScheduler scheduler, bool clearJobs, bool scheduleJobs)
+        public async Task Test(IScheduler[] schedulers, bool clearJobs, bool scheduleJobs)
         {
+            var scheduler = schedulers[0];
+            
             try
             {
                 if (clearJobs)
                 {
-                    await scheduler.Clear();
+                    foreach (var s in schedulers)
+                    {
+                        await s.Clear();                        
+                    }
                 }
 
                 if (scheduleJobs)
@@ -207,9 +212,12 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
                     await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupStartsWith("a").DeepClone());
                     await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals("a").DeepClone());
 
-                    await scheduler.Start();
+                    foreach (var s in schedulers)
+                    {
+                        await s.Start();
+                    }
 
-                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                    Thread.Sleep(TimeSpan.FromSeconds(3 * schedulers.Length));
 
                     await scheduler.PauseAll();
 
@@ -276,7 +284,10 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
             }
             finally
             {
-                await scheduler.Shutdown(false);
+                foreach (var s in schedulers)
+                {
+                    await s.Shutdown(false);                    
+                }
             }
         }
 
