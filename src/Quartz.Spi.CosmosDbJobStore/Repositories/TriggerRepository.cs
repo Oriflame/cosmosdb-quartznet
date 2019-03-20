@@ -26,9 +26,12 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         
         public Task<IList<PersistentTriggerBase>> GetAllByJobAndState(JobKey jobKey, PersistentTriggerState state)
         {
+            var jobName = jobKey?.Name;
+            var jobGroup = jobKey?.Group;
+            
             return Task.FromResult<IList<PersistentTriggerBase>>(_documentClient
                 .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri)
-                .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobKey.Group && x.JobName == jobKey.Name && x.State == state)
+                .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobGroup && x.JobName == jobName && x.State == state)
                 .AsEnumerable()
                 .ToList());
         }
