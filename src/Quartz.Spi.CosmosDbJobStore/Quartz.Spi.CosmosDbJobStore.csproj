@@ -6,7 +6,7 @@
         <RootNamespace>Quartz.Spi.CosmosDbJobStore</RootNamespace>
         <LangVersion>latest</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>0.5.3</Version>
+        <Version>0.5.4</Version>
         <Authors>Frantisek Jandos</Authors>
         <Company>Oriflame Software</Company>
         <PackageLicenseUrl>https://github.com/Oriflame/cosmosdb-quartznet/blob/master/LICENSE.txt</PackageLicenseUrl>
