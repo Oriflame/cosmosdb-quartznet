@@ -76,6 +76,20 @@ namespace Quartz.Spi.CosmosDbJobStore
         public TimeSpan ClusterCheckinInterval { get; set; }
         
         /// <summary>
+        /// The time span by which a check-in must have missed its
+        /// next-fire-time, in order for it to be considered "misfired" and thus
+        /// other scheduler instances in a cluster can consider a "misfired" scheduler
+        /// instance as failed or dead.
+        /// </summary>
+        [TimeSpanParseRule(TimeSpanParseRule.Milliseconds)]
+        public TimeSpan ClusterCheckinMisfireThreshold { get; set; }
+
+        /// <summary>
+        /// After specified seconds, the lock will be deleted.
+        /// </summary>
+        public int LockTtlSeconds { get; set; }
+        
+        /// <summary>
         ///     Gets or sets the number of retries before an error is logged for recovery operations.
         /// </summary>
         public int RetryableActionErrorLogThreshold { get; set; }
@@ -145,9 +159,11 @@ namespace Quartz.Spi.CosmosDbJobStore
         public CosmosDbJobStore()
         {
             ClusterCheckinInterval = TimeSpan.FromMilliseconds(7500);
+            ClusterCheckinMisfireThreshold = TimeSpan.FromMilliseconds(52500); // Failover will start after 1 minute by default
             MaxMisfiresToHandleAtATime = 20;
             RetryableActionErrorLogThreshold = 4;
             DbRetryInterval = TimeSpan.FromSeconds(5);
+            LockTtlSeconds = 10 * 60; // 10 minutes
         }
         
         
@@ -157,7 +173,7 @@ namespace Quartz.Spi.CosmosDbJobStore
             _schedulerSignaler = signaler;
 
             var serializerSettings = new InheritedJsonObjectSerializer();
-            var documentClient = new DocumentClient(new Uri(Endpoint), Key, serializerSettings.CreateSerializerSettings(), new ConnectionPolicy()
+            var documentClient = new DocumentClient(new Uri(Endpoint), Key, serializerSettings.CreateSerializerSettings(), new ConnectionPolicy
             {
                 ConnectionMode = ConnectionMode.Direct,
                 ConnectionProtocol = Protocol.Tcp,
@@ -170,7 +186,7 @@ namespace Quartz.Spi.CosmosDbJobStore
                 }
             }); // TODO Configurable
             
-            _lockManager = new LockManager(new LockRepository(documentClient, DatabaseId, CollectionId, InstanceName), InstanceName, InstanceId);
+            _lockManager = new LockManager(new LockRepository(documentClient, DatabaseId, CollectionId, InstanceName), InstanceName, InstanceId, LockTtlSeconds);
             _calendarRepository = new CalendarRepository(documentClient, DatabaseId, CollectionId, InstanceName);
             _triggerRepository = new TriggerRepository(documentClient, DatabaseId, CollectionId, InstanceName);
             _jobRepository = new JobRepository(documentClient, DatabaseId, CollectionId, InstanceName);
@@ -1752,7 +1768,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             var passed = DateTimeOffset.UtcNow - LastCheckin;
             var ts = scheduler.CheckinInterval > passed ? scheduler.CheckinInterval : passed; // Max
-            return scheduler.LastCheckIn.Add(ts).Add(ClusterCheckinInterval); // LastChecking + 15s
+            return scheduler.LastCheckIn.Add(ts).Add(ClusterCheckinMisfireThreshold);
         }
 
         protected virtual async Task<IReadOnlyList<PersistentScheduler>> ClusterCheckIn(CancellationToken cancellationToken = default)
