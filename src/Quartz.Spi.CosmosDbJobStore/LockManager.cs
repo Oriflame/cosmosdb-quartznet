@@ -67,7 +67,7 @@ namespace Quartz.Spi.CosmosDbJobStore
                     return disposableLock;
                 }
                 
-                Thread.Sleep(SleepThreshold);
+                await Task.Delay(SleepThreshold);
             }
         }
 

@@ -16,7 +16,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         
         public Task<IReadOnlyCollection<string>> GetGroups()
         {
-            return Task.FromResult<IReadOnlyCollection<string>>(_documentClient.CreateDocumentQuery<PausedTriggerGroup>(_collectionUri)
+            return Task.FromResult<IReadOnlyCollection<string>>(_documentClient.CreateDocumentQuery<PausedTriggerGroup>(_collectionUri, CreateFeedOptions())
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName)
                 .Select(x => x.Group)
                 .AsEnumerable()

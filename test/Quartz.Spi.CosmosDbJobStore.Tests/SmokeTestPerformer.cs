@@ -217,7 +217,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
                         await s.Start();
                     }
 
-                    Thread.Sleep(TimeSpan.FromSeconds(3 * schedulers.Length));
+                    await Task.Delay(3 * schedulers.Length);
 
                     await scheduler.PauseAll();
 
@@ -229,7 +229,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
 
                     await scheduler.PauseJobs(GroupMatcher<JobKey>.GroupEquals(schedId));
 
-                    Thread.Sleep(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(1));
 
                     await scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(schedId));
 
@@ -240,7 +240,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
 
                     (await scheduler.GetPausedTriggerGroups()).Count.Should().Be(1);
 
-                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                    await Task.Delay(TimeSpan.FromSeconds(3));
                     await scheduler.ResumeTriggers(GroupMatcher<TriggerKey>.GroupEquals(schedId));
 
                     (await scheduler.GetTrigger(new TriggerKey("trig_2", schedId))).Should().NotBeNull();
@@ -260,7 +260,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
                     genericJob.Should().NotBeNull();
                     await scheduler.TriggerJob(genericjobKey);
 
-                    Thread.Sleep(TimeSpan.FromSeconds(30));
+                    await Task.Delay(TimeSpan.FromSeconds(30));
 
                     GenericJobType<string>.TriggeredCount.Should().Be(1);
                     await scheduler.Standby();
@@ -400,12 +400,12 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
         ///     <see cref="ITrigger" /> fires that is associated with
         ///     the <see cref="IJob" />.
         /// </summary>
-        public virtual Task Execute(IJobExecutionContext context)
+        public virtual async Task Execute(IJobExecutionContext context)
         {
             // delay for ten seconds
             try
             {
-                Thread.Sleep(TimeSpan.FromSeconds(10));
+                await Task.Delay(TimeSpan.FromSeconds(10));
             }
             catch (ThreadInterruptedException)
             {
@@ -423,7 +423,6 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
             }
             count++;
             data.Put(Count, count);
-            return Task.FromResult(0);
         }
     }
 

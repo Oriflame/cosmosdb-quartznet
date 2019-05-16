@@ -216,7 +216,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
                    break;
                }
                
-               Thread.Sleep(500);
+               await Task.Delay(500);
            }
            
            await scheduler.Shutdown(true);
@@ -486,7 +486,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
                 await Scheduler.ScheduleJob(TriggerBuilder.Create().ForJob(jobName).StartNow().Build());
                 while ((await scheduler.GetCurrentlyExecutingJobs()).Count == 0)
                 {
-                    Thread.Sleep(50);
+                    await Task.Delay(50);
                 }
             }
             finally
@@ -503,7 +503,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
                         throw new Exception("exception: " + ex.Message, ex);
                     }
                 });
-                Thread.Sleep(1000);
+                await Task.Delay(1000);
                 shutdown.Should().BeFalse();
                 barrier.SignalAndWait(TestTimeout);
                 task.Wait();
@@ -532,7 +532,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Tests
 
             await Scheduler.ScheduleJob(job, trigger);
 
-            Thread.Sleep(13 * 60 * 1000);
+            await Task.Delay(13 * 60 * 1000);
             
             foreach (var scheduler in _schedulers)
             {
