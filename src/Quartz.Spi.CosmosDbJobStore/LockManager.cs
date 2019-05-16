@@ -15,7 +15,7 @@ namespace Quartz.Spi.CosmosDbJobStore
     internal class LockManager : IDisposable
     {
         private static readonly TimeSpan SleepThreshold = TimeSpan.FromSeconds(1);
-        private const int LockTtl = 5 * 60; // 5 minutes (after this, Lock is released automatically)
+        private readonly int _lockTtl;
         
         private readonly LockRepository _lockRepository;
         private readonly string _instanceName;
@@ -26,11 +26,12 @@ namespace Quartz.Spi.CosmosDbJobStore
         private bool _disposed;
         
         
-        public LockManager(LockRepository lockRepository, string instanceName, string instanceId)
+        public LockManager(LockRepository lockRepository, string instanceName, string instanceId, int lockTtlSeconds)
         {
             _lockRepository = lockRepository;
             _instanceName = instanceName;
             _instanceId = instanceId;
+            _lockTtl = lockTtlSeconds;
         }
 
         
@@ -57,7 +58,7 @@ namespace Quartz.Spi.CosmosDbJobStore
             {
                 EnsureObjectNotDisposed();
                 
-                var lck = new PersistentLock(_instanceName, lockType, DateTimeOffset.UtcNow, _instanceId, LockTtl);
+                var lck = new PersistentLock(_instanceName, lockType, DateTimeOffset.UtcNow, _instanceId, _lockTtl);
                 
                 if (await _lockRepository.TrySave(lck))
                 {
