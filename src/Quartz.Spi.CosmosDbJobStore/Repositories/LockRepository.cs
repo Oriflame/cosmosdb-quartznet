@@ -18,7 +18,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         {
             try
             {
-                await _documentClient.CreateDocumentAsync(_collectionUri, lck, disableAutomaticIdGeneration: true);
+                await _documentClient.CreateDocumentAsync(_collectionUri, lck, CreateRequestOptions(), true);
                 return true;
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.Conflict)
@@ -31,7 +31,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         {
             try
             {
-                await _documentClient.DeleteDocumentAsync(CreateDocumentUri(lockId));
+                await _documentClient.DeleteDocumentAsync(CreateDocumentUri(lockId), CreateRequestOptions());
                 return true;
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
@@ -43,7 +43,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         public Task<IList<PersistentLock>> GetAllByInstanceId(string instanceId)
         {
             return Task.FromResult<IList<PersistentLock>>(_documentClient
-                .CreateDocumentQuery<PersistentLock>(_collectionUri)
+                .CreateDocumentQuery<PersistentLock>(_collectionUri, CreateFeedOptions())
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.InstanceId == instanceId)
                 .AsEnumerable()
                 .ToList());

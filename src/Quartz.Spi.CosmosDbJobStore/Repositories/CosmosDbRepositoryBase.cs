@@ -57,7 +57,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
                         Automatic = true,
                         IncludedPaths =
                         {
-                            new IncludedPath()
+                            new IncludedPath
                             {
                                 Path = "/*",
                                 Indexes =
@@ -68,14 +68,14 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
                             },
                         }
                     },
+                    PartitionKey = new PartitionKeyDefinition { Paths = { "/instanceName" }}
                 };
 
                 try
                 {
                     await _documentClient.CreateDocumentCollectionAsync(
                         UriFactory.CreateDatabaseUri(_databaseId),
-                        collection,
-                        new RequestOptions { OfferThroughput = 400 });
+                        collection);
                 }
                 catch (DocumentClientException dce)
                 {
@@ -89,18 +89,20 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         {
             try
             {
-                return (await _documentClient.ReadDocumentAsync<TEntity>(CreateDocumentUri(id))).Document;
+                return (await _documentClient.ReadDocumentAsync<TEntity>(CreateDocumentUri(id), CreateRequestOptions())).Document;
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
             {
                 return null;
             }
         }
+
         
+
         public Task<bool> Exists(string id)
         {
             return Task.FromResult(_documentClient
-                .CreateDocumentQuery<TEntity>(_collectionUri)
+                .CreateDocumentQuery<TEntity>(_collectionUri, CreateFeedOptions())
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.Id == id)
                 .Take(1)
                 .AsEnumerable()
@@ -109,19 +111,19 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
 
         public Task Update(TEntity entity)
         {
-            return _documentClient.UpsertDocumentAsync(_collectionUri, entity, null, true);
+            return _documentClient.UpsertDocumentAsync(_collectionUri, entity, CreateRequestOptions(), true);
         }
 
         public Task Save(TEntity entity)
         {
-            return _documentClient.CreateDocumentAsync(_collectionUri, entity, null, true);
+            return _documentClient.CreateDocumentAsync(_collectionUri, entity, CreateRequestOptions(), true);
         }
 
         public async Task<bool> Delete(string id)
         {
             try
             {
-                await _documentClient.DeleteDocumentAsync(CreateDocumentUri(id));
+                await _documentClient.DeleteDocumentAsync(CreateDocumentUri(id), CreateRequestOptions());
                 return true;
             }
             catch (DocumentClientException e) when (e.StatusCode == HttpStatusCode.NotFound)
@@ -133,13 +135,13 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         public Task<int> Count()
         {
             return Task.FromResult(_documentClient
-                .CreateDocumentQuery<TEntity>(_collectionUri)
+                .CreateDocumentQuery<TEntity>(_collectionUri, CreateFeedOptions())
                 .Count(x => x.Type == _type && x.InstanceName == _instanceName));
         }
         
         public Task<IList<TEntity>> GetAll()
         {
-            return Task.FromResult((IList<TEntity>)_documentClient.CreateDocumentQuery<TEntity>(_collectionUri)
+            return Task.FromResult((IList<TEntity>)_documentClient.CreateDocumentQuery<TEntity>(_collectionUri, CreateFeedOptions())
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName)
                 .AsEnumerable()
                 .ToList());
@@ -147,21 +149,33 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         
         public async Task DeleteAll()
         {
-            var all = _documentClient.CreateDocumentQuery<TEntity>(_collectionUri)
+            var all = _documentClient.CreateDocumentQuery<TEntity>(_collectionUri, CreateFeedOptions())
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName)
                 .Select(x => x.Id)
                 .AsEnumerable()
                 .ToList();
 
+            var requestOptions = CreateRequestOptions();
+            
             foreach (var id in all)
             {
-                await _documentClient.DeleteDocumentAsync(CreateDocumentUri(id));
+                await _documentClient.DeleteDocumentAsync(CreateDocumentUri(id), requestOptions);
             }
         }
         
         protected Uri CreateDocumentUri(string id)
         {
             return UriFactory.CreateDocumentUri(_databaseId, _collectionId, id);
+        }
+        
+        protected RequestOptions CreateRequestOptions()
+        {
+            return new RequestOptions { PartitionKey = new PartitionKey(_instanceName)};
+        }
+        
+        protected FeedOptions CreateFeedOptions()
+        {
+            return new FeedOptions { PartitionKey = new PartitionKey(_instanceName)};
         }
     }
 }
