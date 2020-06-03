@@ -1332,25 +1332,24 @@ namespace Quartz.Spi.CosmosDbJobStore
                         acquiredJobKeysForNoConcurrentExec.Add(jobKey);
                     }
 
-                    if (nextTrigger.State == PersistentTriggerState.Waiting)
-                    {
-                        nextTrigger.State = PersistentTriggerState.Acquired;
-                        await _triggerRepository.Update(nextTrigger);
-                    }
-                    else
+                    if (nextTrigger.State != PersistentTriggerState.Waiting)
                     {
                         continue;
                     }
 
+                    nextTrigger.State = PersistentTriggerState.Acquired;
+
                     var operableTrigger = (IOperableTrigger) nextTrigger.GetTrigger();
                     operableTrigger.FireInstanceId = GetFiredTriggerRecordId();
 
-                    var firedTrigger = new PersistentFiredTrigger(operableTrigger.FireInstanceId, nextTrigger, null)
+                    var firedTrigger = new PersistentFiredTrigger(operableTrigger.FireInstanceId, nextTrigger, job)
                     {
                         State = PersistentTriggerState.Acquired,
                         InstanceId = InstanceId
                     };
+
                     await _firedTriggerRepository.Save(firedTrigger);
+                    await _triggerRepository.Update(nextTrigger);
 
                     acquiredTriggers.Add(operableTrigger);
                 }
