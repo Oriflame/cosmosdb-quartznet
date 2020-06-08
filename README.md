@@ -3,7 +3,7 @@ CosmosDb Job Store for Quartz.NET
 
 We have created this project to allow clustered Quartz.NET store jobs into CosmosDb. It is more or less port of [Quartz.NET MongoDb Job Store](https://github.com/chrisdrobison/mongodb-quartz-net).   
 
-## Basic Usage##
+## Basic Usage
 
 ```cs
 var properties = new NameValueCollection();
@@ -19,6 +19,11 @@ properties[$"{StdSchedulerFactory.PropertyJobStorePrefix}.Clustered"] = "true";
 
 var scheduler = new StdSchedulerFactory(properties);
 return scheduler.GetScheduler();
+```
+### Collection partition key
+By default Cosmos DB collection partitioned by `PropertySchedulerInstanceName`, instead entity type (e.g. 'Trigger', 'JobDetails') can be used as the partition key.
+```cs
+properties[$"{StdSchedulerFactory.PropertyJobStorePrefix}.{nameof(CosmosDbJobStore.PartitionPerEntityType)}"] = "true";
 ```
 
 ## Nuget ##

@@ -8,8 +8,8 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
 {
     internal class FiredTriggerRepository : CosmosDbRepositoryBase<PersistentFiredTrigger>
     {
-        public FiredTriggerRepository(IDocumentClient documentClient, string databaseId, string collectionId, string instanceName)
-            : base(documentClient, databaseId, collectionId, PersistentFiredTrigger.EntityType, instanceName)
+        public FiredTriggerRepository(IDocumentClient documentClient, string databaseId, string collectionId, string instanceName, bool partitionPerEntityType)
+            : base(documentClient, databaseId, collectionId, PersistentFiredTrigger.EntityType, instanceName, partitionPerEntityType)
         {
         }
 
@@ -17,7 +17,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         public Task<IList<PersistentFiredTrigger>> GetAllByJob(string jobName, string jobGroup)
         {
             return Task.FromResult<IList<PersistentFiredTrigger>>(_documentClient
-                .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri, CreateFeedOptions())
+                .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobGroup && x.JobName == jobName)
                 .AsEnumerable()
                 .ToList());
@@ -26,7 +26,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         public Task<IList<PersistentFiredTrigger>> GetAllRecoverableByInstanceId(string instanceId)
         {
             return Task.FromResult<IList<PersistentFiredTrigger>>(_documentClient
-                .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri, CreateFeedOptions())
+                .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.InstanceId == instanceId && x.RequestsRecovery)
                 .AsEnumerable()
                 .ToList());
@@ -35,7 +35,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         public Task<IList<PersistentFiredTrigger>> GetAllByInstanceId(string instanceId)
         {
             return Task.FromResult<IList<PersistentFiredTrigger>>(_documentClient
-                .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri, CreateFeedOptions())
+                .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.InstanceId == instanceId)
                 .AsEnumerable()
                 .ToList());
@@ -51,7 +51,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
             // We may introduce paging if performance boost is necessary
             
             var triggers = _documentClient
-                .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri, CreateFeedOptions())
+                .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.InstanceId == instanceId)
                 .Select(x => x.Id)
                 .AsEnumerable()
@@ -59,7 +59,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
 
             foreach (var trigger in triggers)
             {
-                await _documentClient.DeleteDocumentAsync(CreateDocumentUri(trigger), CreateRequestOptions());
+                await _documentClient.DeleteDocumentAsync(CreateDocumentUri(trigger), RequestOptions);
             }
             
             return triggers.Count;
@@ -68,7 +68,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         public Task<IList<PersistentFiredTrigger>> GetAllByTrigger(string triggerKeyName, string triggerKeyGroup)
         {
             return Task.FromResult<IList<PersistentFiredTrigger>>(_documentClient
-                .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri, CreateFeedOptions())
+                .CreateDocumentQuery<PersistentFiredTrigger>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.TriggerGroup == triggerKeyGroup && (x.TriggerName == null || x.TriggerName == triggerKeyName))
                 .AsEnumerable()
                 .ToList());
