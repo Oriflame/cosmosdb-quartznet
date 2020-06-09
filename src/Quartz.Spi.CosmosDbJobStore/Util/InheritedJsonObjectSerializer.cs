@@ -17,6 +17,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Util
             var settings = base.CreateSerializerSettings();
             
             settings.Converters.Add(new TimeOfDayConverter());
+            settings.Converters.Add(new TypeConverter());
             settings.TypeNameHandling = TypeNameHandling.All;
             settings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
             settings.DateParseHandling = DateParseHandling.DateTimeOffset;
@@ -63,6 +64,22 @@ namespace Quartz.Spi.CosmosDbJobStore.Util
             {
                 return typeof(TimeOfDay) == objectType;
             }
+        }
+
+        public class TypeConverter : JsonConverter
+        {
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                Type typeValue = (Type) value;
+                writer.WriteValue(typeValue.FullName + ", " + typeValue.Assembly.GetName().Name);
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) =>
+                throw new NotImplementedException();
+
+            public override bool CanRead => false;
+
+            public override bool CanConvert(Type objectType) => typeof(Type).IsAssignableFrom(objectType);
         }
     }
 }
