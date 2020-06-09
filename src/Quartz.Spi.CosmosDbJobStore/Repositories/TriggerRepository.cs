@@ -9,8 +9,8 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
 {
     internal class TriggerRepository : CosmosDbRepositoryBase<PersistentTriggerBase>
     {
-        public TriggerRepository(IDocumentClient documentClient, string databaseId, string collectionId, string instanceName)
-            : base(documentClient, databaseId, collectionId, PersistentTriggerBase.EntityType, instanceName)
+        public TriggerRepository(IDocumentClient documentClient, string databaseId, string collectionId, string instanceName, bool partitionPerEntityType)
+            : base(documentClient, databaseId, collectionId, PersistentTriggerBase.EntityType, instanceName, partitionPerEntityType)
         {
         }
 
@@ -18,7 +18,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         public Task<IList<PersistentTriggerBase>> GetAllByJob(string jobName, string jobGroup)
         {
             return Task.FromResult<IList<PersistentTriggerBase>>(_documentClient
-                .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, CreateFeedOptions())
+                .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobGroup && x.JobName == jobName)
                 .AsEnumerable()
                 .ToList());
@@ -30,7 +30,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
             var jobGroup = jobKey?.Group;
             
             return Task.FromResult<IList<PersistentTriggerBase>>(_documentClient
-                .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, CreateFeedOptions())
+                .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobGroup && x.JobName == jobName && x.State == state)
                 .AsEnumerable()
                 .ToList());
@@ -39,14 +39,14 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         public Task<int> CountByJob(string jobName, string jobGroup)
         {
             return Task.FromResult(_documentClient
-                .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, CreateFeedOptions())
+                .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, FeedOptions)
                 .Count(x => x.Type == _type && x.InstanceName == _instanceName && x.JobGroup == jobGroup && x.JobName == jobName));
         }
         
         public Task<IList<PersistentTriggerBase>> GetAllCompleteByCalendar(string calendarName)
         {
             return Task.FromResult<IList<PersistentTriggerBase>>(_documentClient
-                .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, CreateFeedOptions())
+                .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.CalendarName == calendarName)
                 .AsEnumerable()
                 .ToList());
@@ -55,7 +55,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         public Task<bool> ExistsByCalendar(string calendarName)
         {
             return Task.FromResult(_documentClient
-                .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, CreateFeedOptions())
+                .CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.CalendarName == calendarName)
                 .Take(1)
                 .AsEnumerable()
@@ -64,7 +64,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         
         public Task<int> GetMisfireCount(DateTimeOffset nextFireTime)
         {
-            return Task.FromResult(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, CreateFeedOptions())
+            return Task.FromResult(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, FeedOptions)
                 .Count(x => x.Type == _type && x.InstanceName == _instanceName && x.MisfireInstruction != MisfireInstruction.IgnoreMisfirePolicy && x.NextFireTime < nextFireTime && x.State == PersistentTriggerState.Waiting));
         }
         
@@ -77,7 +77,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         /// <returns></returns>
         public Task<IList<PersistentTriggerBase>> GetAllMisfired(DateTimeOffset nextFireTime, int limit)
         {
-            return Task.FromResult<IList<PersistentTriggerBase>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, CreateFeedOptions())
+            return Task.FromResult<IList<PersistentTriggerBase>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && x.MisfireInstruction != MisfireInstruction.IgnoreMisfirePolicy && x.NextFireTime < nextFireTime && x.State == PersistentTriggerState.Waiting)
                 .OrderBy(x => x.NextFireTime) // Note that Cosmos can't do it at the moment :-( .ThenByDescending(x => x.Priority)
                 .Take(limit)
@@ -87,7 +87,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
         
         public Task<List<PersistentTriggerBase>> GetAllByState(params PersistentTriggerState[] states)
         {
-            return Task.FromResult<List<PersistentTriggerBase>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, CreateFeedOptions())
+            return Task.FromResult<List<PersistentTriggerBase>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName && states.Contains(x.State))
                 .AsEnumerable()
                 .ToList());
@@ -100,14 +100,14 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
             foreach (var trigger in triggers)
             {
                 trigger.State = newState;
-                await _documentClient.UpsertDocumentAsync(CreateDocumentUri(trigger.Id), trigger, CreateRequestOptions(), true);
+                await _documentClient.UpsertDocumentAsync(CreateDocumentUri(trigger.Id), trigger, RequestOptions, true);
             }
             return triggers.Count;
         }
 
         public Task<IReadOnlyCollection<string>> GetGroups()
         {
-            return Task.FromResult<IReadOnlyCollection<string>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, CreateFeedOptions())
+            return Task.FromResult<IReadOnlyCollection<string>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName)
                 .Select(x => x.Group)
                 .AsEnumerable()
@@ -122,7 +122,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Repositories
                 maxCount = 1;
             }
 
-            return Task.FromResult<List<PersistentTriggerBase>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, CreateFeedOptions())
+            return Task.FromResult<List<PersistentTriggerBase>>(_documentClient.CreateDocumentQuery<PersistentTriggerBase>(_collectionUri, FeedOptions)
                 .Where(x => x.Type == _type && x.InstanceName == _instanceName 
                                             && x.State == PersistentTriggerState.Waiting && x.NextFireTime <= noLaterThan 
                                             && (x.MisfireInstruction == -1 || (x.MisfireInstruction != -1 && x.NextFireTime >= noEarlierThan)))

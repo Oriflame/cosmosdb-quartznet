@@ -141,6 +141,11 @@ namespace Quartz.Spi.CosmosDbJobStore
         /// </summary>
         public int MaxMisfiresToHandleAtATime { get; set; }
 
+        /// <summary>
+        /// If true, uses the entity type as the partition key; otherwise, uses instanceName.
+        /// </summary>
+        public bool PartitionPerEntityType { get; set; }
+
         protected DateTimeOffset MisfireTime
         {
             get
@@ -185,14 +190,14 @@ namespace Quartz.Spi.CosmosDbJobStore
                     MaxRetryAttemptsOnThrottledRequests = 10
                 }
             }); // TODO Configurable
-            
-            _lockManager = new LockManager(new LockRepository(documentClient, DatabaseId, CollectionId, InstanceName), InstanceName, InstanceId, LockTtlSeconds);
-            _calendarRepository = new CalendarRepository(documentClient, DatabaseId, CollectionId, InstanceName);
-            _triggerRepository = new TriggerRepository(documentClient, DatabaseId, CollectionId, InstanceName);
-            _jobRepository = new JobRepository(documentClient, DatabaseId, CollectionId, InstanceName);
-            _schedulerRepository = new SchedulerRepository(documentClient, DatabaseId, CollectionId, InstanceName);
-            _firedTriggerRepository = new FiredTriggerRepository(documentClient, DatabaseId, CollectionId, InstanceName);
-            _pausedTriggerGroupRepository = new PausedTriggerGroupRepository(documentClient, DatabaseId, CollectionId, InstanceName);
+
+            _lockManager = new LockManager(new LockRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType), InstanceName, InstanceId, LockTtlSeconds);
+            _calendarRepository = new CalendarRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
+            _triggerRepository = new TriggerRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
+            _jobRepository = new JobRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
+            _schedulerRepository = new SchedulerRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
+            _firedTriggerRepository = new FiredTriggerRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
+            _pausedTriggerGroupRepository = new PausedTriggerGroupRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
             await _schedulerRepository.EnsureInitialized(); // All repositories uses one collection
         }
         
