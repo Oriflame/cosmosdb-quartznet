@@ -160,7 +160,38 @@ namespace Quartz.Spi.CosmosDbJobStore
             }
         }
 
-        
+        /// <summary>
+        /// The maximum number of concurrent connections allowed for the target
+        /// service endpoint in the Azure Cosmos DB service.
+        /// </summary>
+        public int MaxConnectionLimit { get; set; }
+
+        /// <summary>
+        /// The maximum number of retries in the case where the request fails because 
+        /// the Azure Cosmos DB service has applied rate limiting on the client.
+        /// </summary>
+        public int MaxRetryAttemptsOnThrottledRequests { get; set; }
+
+        /// <summary>
+        /// The maximum retry time in seconds for the Azure Cosmos DB service.
+        /// </summary>
+        [TimeSpanParseRule(TimeSpanParseRule.Seconds)]
+        public TimeSpan MaxRetryWaitTimeInSeconds { get; set; }
+
+
+        /// <summary>
+        /// The request timeout in seconds when connecting to the Azure Cosmos DB service. The number 
+        /// specifies the time to wait for response to come back from network peer.
+        /// </summary>
+        [TimeSpanParseRule(TimeSpanParseRule.Seconds)]
+        public TimeSpan RequestTimeout { get; set; }
+
+        /// <summary>
+        /// If true, enables the flag to enable writes on any locations (regions) for
+        /// geo-replicated database accounts in the Azure Cosmos DB service.
+        /// </summary>
+        public bool UseMultipleWriteLocations { get; set; }
+
         public CosmosDbJobStore()
         {
             ClusterCheckinInterval = TimeSpan.FromMilliseconds(7500);
@@ -169,9 +200,13 @@ namespace Quartz.Spi.CosmosDbJobStore
             RetryableActionErrorLogThreshold = 4;
             DbRetryInterval = TimeSpan.FromSeconds(5);
             LockTtlSeconds = 10 * 60; // 10 minutes
+            RequestTimeout = TimeSpan.FromSeconds(30);
+            UseMultipleWriteLocations = false;
+            MaxConnectionLimit = 10;
+            MaxRetryWaitTimeInSeconds = TimeSpan.FromSeconds(3);
+            MaxRetryAttemptsOnThrottledRequests = 10;
         }
-        
-        
+
         public async Task Initialize(ITypeLoadHelper loadHelper, ISchedulerSignaler signaler,
             CancellationToken cancellationToken = new CancellationToken())
         {           
@@ -182,14 +217,15 @@ namespace Quartz.Spi.CosmosDbJobStore
             {
                 ConnectionMode = ConnectionMode.Direct,
                 ConnectionProtocol = Protocol.Tcp,
-                RequestTimeout = TimeSpan.FromSeconds(30),
-                MaxConnectionLimit = 10,
+                RequestTimeout = RequestTimeout,
+                MaxConnectionLimit = MaxConnectionLimit,
+                UseMultipleWriteLocations = UseMultipleWriteLocations,
                 RetryOptions = new RetryOptions
                 {
-                    MaxRetryWaitTimeInSeconds = 3,
-                    MaxRetryAttemptsOnThrottledRequests = 10
+                    MaxRetryWaitTimeInSeconds = MaxRetryWaitTimeInSeconds.Seconds,
+                    MaxRetryAttemptsOnThrottledRequests = MaxRetryAttemptsOnThrottledRequests
                 }
-            }); // TODO Configurable
+            });
 
             _lockManager = new LockManager(new LockRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType), InstanceName, InstanceId, LockTtlSeconds);
             _calendarRepository = new CalendarRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
