@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 using Quartz.Impl.AdoJobStore;
 using Quartz.Impl.Matchers;
 using Quartz.Impl.Triggers;
@@ -186,11 +186,6 @@ namespace Quartz.Spi.CosmosDbJobStore
         [TimeSpanParseRule(TimeSpanParseRule.Seconds)]
         public TimeSpan RequestTimeout { get; set; }
 
-        /// <summary>
-        /// If true, enables the flag to enable writes on any locations (regions) for
-        /// geo-replicated database accounts in the Azure Cosmos DB service.
-        /// </summary>
-        public bool UseMultipleWriteLocations { get; set; }
 
         public CosmosDbJobStore()
         {
@@ -201,40 +196,48 @@ namespace Quartz.Spi.CosmosDbJobStore
             DbRetryInterval = TimeSpan.FromSeconds(5);
             LockTtlSeconds = 10 * 60; // 10 minutes
             RequestTimeout = TimeSpan.FromSeconds(30);
-            UseMultipleWriteLocations = false;
             MaxConnectionLimit = 10;
             MaxRetryWaitTimeInSeconds = TimeSpan.FromSeconds(3);
             MaxRetryAttemptsOnThrottledRequests = 10;
         }
 
+        
         public async Task Initialize(ITypeLoadHelper loadHelper, ISchedulerSignaler signaler,
             CancellationToken cancellationToken = new CancellationToken())
         {           
             _schedulerSignaler = signaler;
 
-            var serializerSettings = new InheritedJsonObjectSerializer();
-            var documentClient = new DocumentClient(new Uri(Endpoint), Key, serializerSettings.CreateSerializerSettings(), new ConnectionPolicy
+            var documentClient = new CosmosClient(Endpoint, Key, new CosmosClientOptions
             {
-                ConnectionMode = ConnectionMode.Direct,
-                ConnectionProtocol = Protocol.Tcp,
+                Serializer = new QuartzCosmosSerializer(),
                 RequestTimeout = RequestTimeout,
-                MaxConnectionLimit = MaxConnectionLimit,
-                UseMultipleWriteLocations = UseMultipleWriteLocations,
-                RetryOptions = new RetryOptions
-                {
-                    MaxRetryWaitTimeInSeconds = MaxRetryWaitTimeInSeconds.Seconds,
-                    MaxRetryAttemptsOnThrottledRequests = MaxRetryAttemptsOnThrottledRequests
-                }
+                MaxTcpConnectionsPerEndpoint = MaxConnectionLimit,
+                MaxRetryWaitTimeOnRateLimitedRequests = MaxRetryWaitTimeInSeconds,
+                MaxRetryAttemptsOnRateLimitedRequests = MaxRetryAttemptsOnThrottledRequests
             });
+            
+            var databaseResponse = await documentClient.CreateDatabaseIfNotExistsAsync(DatabaseId, cancellationToken: cancellationToken);
+            
+            var containerResponse = await databaseResponse.Database.CreateContainerIfNotExistsAsync(
+                new ContainerProperties(CollectionId, PartitionPerEntityType ? "/type" : "/instanceName")
+                {
+                    DefaultTimeToLive = -1,
+                    IndexingPolicy =
+                    {
+                        IndexingMode = IndexingMode.Consistent,
+                        IncludedPaths = {new IncludedPath { Path = "/*"}}
+                    }
+                }, cancellationToken: cancellationToken);
 
-            _lockManager = new LockManager(new LockRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType), InstanceName, InstanceId, LockTtlSeconds);
-            _calendarRepository = new CalendarRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
-            _triggerRepository = new TriggerRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
-            _jobRepository = new JobRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
-            _schedulerRepository = new SchedulerRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
-            _firedTriggerRepository = new FiredTriggerRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
-            _pausedTriggerGroupRepository = new PausedTriggerGroupRepository(documentClient, DatabaseId, CollectionId, InstanceName, PartitionPerEntityType);
-            await _schedulerRepository.EnsureInitialized(); // All repositories uses one collection
+            var container = containerResponse.Container;
+
+            _lockManager = new LockManager(new LockRepository(container, InstanceName, PartitionPerEntityType), InstanceName, InstanceId, LockTtlSeconds);
+            _calendarRepository = new CalendarRepository(container, InstanceName, PartitionPerEntityType);
+            _triggerRepository = new TriggerRepository(container, InstanceName, PartitionPerEntityType);
+            _jobRepository = new JobRepository(container, InstanceName, PartitionPerEntityType);
+            _schedulerRepository = new SchedulerRepository(container, InstanceName, PartitionPerEntityType);
+            _firedTriggerRepository = new FiredTriggerRepository(container, InstanceName, PartitionPerEntityType);
+            _pausedTriggerGroupRepository = new PausedTriggerGroupRepository(container, InstanceName, PartitionPerEntityType);
         }
         
 
