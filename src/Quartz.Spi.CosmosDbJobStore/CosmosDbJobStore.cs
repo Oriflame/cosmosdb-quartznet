@@ -186,11 +186,6 @@ namespace Quartz.Spi.CosmosDbJobStore
         [TimeSpanParseRule(TimeSpanParseRule.Seconds)]
         public TimeSpan RequestTimeout { get; set; }
 
-        /// <summary>
-        /// If true, enables the flag to enable writes on any locations (regions) for
-        /// geo-replicated database accounts in the Azure Cosmos DB service.
-        /// </summary>
-        public bool UseMultipleWriteLocations { get; set; }
 
         public CosmosDbJobStore()
         {
@@ -201,12 +196,12 @@ namespace Quartz.Spi.CosmosDbJobStore
             DbRetryInterval = TimeSpan.FromSeconds(5);
             LockTtlSeconds = 10 * 60; // 10 minutes
             RequestTimeout = TimeSpan.FromSeconds(30);
-            UseMultipleWriteLocations = false;
             MaxConnectionLimit = 10;
             MaxRetryWaitTimeInSeconds = TimeSpan.FromSeconds(3);
             MaxRetryAttemptsOnThrottledRequests = 10;
         }
 
+        
         public async Task Initialize(ITypeLoadHelper loadHelper, ISchedulerSignaler signaler,
             CancellationToken cancellationToken = new CancellationToken())
         {           
@@ -216,7 +211,6 @@ namespace Quartz.Spi.CosmosDbJobStore
             {
                 Serializer = new QuartzCosmosSerializer(),
                 RequestTimeout = RequestTimeout,
-                EnableTcpConnectionEndpointRediscovery = UseMultipleWriteLocations,
                 MaxTcpConnectionsPerEndpoint = MaxConnectionLimit,
                 MaxRetryWaitTimeOnRateLimitedRequests = MaxRetryWaitTimeInSeconds,
                 MaxRetryAttemptsOnRateLimitedRequests = MaxRetryAttemptsOnThrottledRequests
