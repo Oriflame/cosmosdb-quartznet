@@ -25,6 +25,11 @@ By default Cosmos DB collection partitioned by `PropertySchedulerInstanceName`, 
 ```cs
 properties[$"{StdSchedulerFactory.PropertyJobStorePrefix}.{nameof(CosmosDbJobStore.PartitionPerEntityType)}"] = "true";
 ```
+### ConnectionMode
+By default the Cosmos DB connectionMode is `Direct`, instead `Gateway` can be used as connectionMode.
+```cs
+properties[$"{StdSchedulerFactory.PropertyJobStorePrefix}.ConnectionMode"] = ((int)ConnectionMode.Gateway).ToString();
+```
 
 ## Nuget ##
 

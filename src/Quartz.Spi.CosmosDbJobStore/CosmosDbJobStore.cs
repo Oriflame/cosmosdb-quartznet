@@ -186,6 +186,11 @@ namespace Quartz.Spi.CosmosDbJobStore
         [TimeSpanParseRule(TimeSpanParseRule.Seconds)]
         public TimeSpan RequestTimeout { get; set; }
 
+        /// <summary>
+        /// Represents the connection mode to be used by the client when connecting to the Azure Cosmos DB.
+        /// </summary>
+        public ConnectionMode ConnectionMode { get; set; }
+
 
         public CosmosDbJobStore()
         {
@@ -199,6 +204,7 @@ namespace Quartz.Spi.CosmosDbJobStore
             MaxConnectionLimit = 10;
             MaxRetryWaitTimeInSeconds = TimeSpan.FromSeconds(3);
             MaxRetryAttemptsOnThrottledRequests = 10;
+            ConnectionMode = ConnectionMode.Direct;
         }
 
         
@@ -211,7 +217,8 @@ namespace Quartz.Spi.CosmosDbJobStore
             {
                 Serializer = new QuartzCosmosSerializer(),
                 RequestTimeout = RequestTimeout,
-                MaxTcpConnectionsPerEndpoint = MaxConnectionLimit,
+                ConnectionMode = ConnectionMode,
+                MaxTcpConnectionsPerEndpoint = ConnectionMode == ConnectionMode.Direct ? MaxConnectionLimit : null,
                 MaxRetryWaitTimeOnRateLimitedRequests = MaxRetryWaitTimeInSeconds,
                 MaxRetryAttemptsOnRateLimitedRequests = MaxRetryAttemptsOnThrottledRequests
             });
