@@ -1,4 +1,5 @@
 CosmosDb Job Store for Quartz.NET
+[![Downloads](https://img.shields.io/nuget/dt/Quartz.Spi.CosmosDbJobStore.svg)](https://www.nuget.org/packages/Quartz.Spi.CosmosDbJobStore/)
 ================================
 
 We have created this project to allow clustered Quartz.NET store jobs into CosmosDb. It is more or less port of [Quartz.NET MongoDb Job Store](https://github.com/chrisdrobison/mongodb-quartz-net).   
