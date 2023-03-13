@@ -812,7 +812,11 @@ namespace Quartz.Spi.CosmosDbJobStore
             switch (trigger.State)
             {
                 case PersistentTriggerState.Error:
-                    trigger.State=PersistentTriggerState.Waiting;
+
+                    trigger.State = await _pausedTriggerGroupRepository.Exists(PausedTriggerGroup.GetId(InstanceName, group))
+                            ? PersistentTriggerState.Paused
+                            : PersistentTriggerState.Waiting;
+
                     await _triggerRepository.Update(trigger);
                     _logger.Info($"Trigger {name} reset from ERROR state to: {PersistentTriggerState.Waiting}");
                     break;
