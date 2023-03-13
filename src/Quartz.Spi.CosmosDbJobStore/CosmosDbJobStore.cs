@@ -1042,7 +1042,7 @@ namespace Quartz.Spi.CosmosDbJobStore
                         return;
                     }
 
-                    if (persistentTrigger.State == PersistentTriggerState.Acquired)
+                    if (persistentTrigger.State == PersistentTriggerState.Acquired || persistentTrigger.State == PersistentTriggerState.Blocked)
                     {
                         persistentTrigger.State = PersistentTriggerState.Waiting;
                         await _triggerRepository.Update(persistentTrigger);
