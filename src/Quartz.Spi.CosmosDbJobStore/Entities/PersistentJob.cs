@@ -47,15 +47,13 @@ namespace Quartz.Spi.CosmosDbJobStore.Entities
         public IJobDetail GetJobDetail()
         {
             // The missing properties are figured out at runtime from the job type attributes
-            return new JobDetailImpl()
-            {
-                Key = GetJobKey(),
-                Description = Description,
-                JobType = JobType,
-                JobDataMap = JobDataMap,
-                Durable = Durable,
-                RequestsRecovery = RequestsRecovery
-            };
+            return JobBuilder.Create(JobType)
+                .WithIdentity(GetJobKey())
+                .WithDescription(Description)
+                .SetJobData(JobDataMap)
+                .StoreDurably(Durable)
+                .RequestRecovery(RequestsRecovery)
+                .Build();
         }
 
         public JobKey GetJobKey()
