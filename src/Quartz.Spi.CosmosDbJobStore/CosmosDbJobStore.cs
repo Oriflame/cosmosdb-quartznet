@@ -791,6 +791,38 @@ namespace Quartz.Spi.CosmosDbJobStore
             }
         }
 
+        public async Task ResetTriggerFromErrorState(TriggerKey triggerKey, CancellationToken cancellationToken = new CancellationToken())
+        {
+            try
+            {
+                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                {
+                    await ResetTriggerFromErrorStateInternal(triggerKey.Name, triggerKey.Group);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new JobPersistenceException(ex.Message, ex);
+            }
+        }
+
+        private async Task ResetTriggerFromErrorStateInternal(string name, string group)
+        {
+            var trigger = await _triggerRepository.Get(PersistentTriggerBase.GetId(InstanceName, group, name));
+            switch (trigger.State)
+            {
+                case PersistentTriggerState.Error:
+
+                    trigger.State = await _pausedTriggerGroupRepository.Exists(PausedTriggerGroup.GetId(InstanceName, group))
+                            ? PersistentTriggerState.Paused
+                            : PersistentTriggerState.Waiting;
+
+                    await _triggerRepository.Update(trigger);
+                    _logger.Info($"Trigger {name} reset from ERROR state to: {PersistentTriggerState.Waiting}");
+                    break;
+            }
+        }
+
         public async Task PauseTrigger(TriggerKey triggerKey, CancellationToken cancellationToken = new CancellationToken())
         {
             try
