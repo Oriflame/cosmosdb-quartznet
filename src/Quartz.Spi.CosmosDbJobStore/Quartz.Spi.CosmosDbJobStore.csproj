@@ -6,15 +6,21 @@
         <RootNamespace>Quartz.Spi.CosmosDbJobStore</RootNamespace>
         <LangVersion>latest</LangVersion>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Version>1.0.4</Version>
+        <Version>1.1.0</Version>
         <Authors>Frantisek Jandos</Authors>
-        <Company>Oriflame Software</Company>
-        <PackageLicense>GNU Lesser General Public License</PackageLicense>
+        <Copyright>Oriflame Software</Copyright>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageProjectUrl>https://github.com/Oriflame/cosmosdb-quartznet</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Oriflame/cosmosdb-quartznet</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>A CosmosDb job store for Quartz.NET. This library targets the Microsoft.Azure.Cosmos v3 driver.</Description>
-        <PackageReleaseNotes>Quartz collection is newly partitioned to allow shared RUs Cosmos account.</PackageReleaseNotes>
+        <PackageReleaseNotes>Updated Quartz packages to ver. 3.6.2. Implemented ResetTriggerFromErrorState. License switched to MIT.</PackageReleaseNotes>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../../LICENSE" Pack="true" PackagePath=""/>
+        <None Include="../../README.md" Pack="true" PackagePath=""/>
+    </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="Common.Logging" Version="3.4.1" />
