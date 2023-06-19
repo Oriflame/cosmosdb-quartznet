@@ -24,7 +24,7 @@
 
     <ItemGroup>
       <PackageReference Include="Common.Logging" Version="3.4.1" />
-      <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.17.1" />
+      <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <PackageReference Include="Quartz" Version="3.6.2" />
       <PackageReference Include="Quartz.Serialization.Json" Version="3.6.2" />
