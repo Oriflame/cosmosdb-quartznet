@@ -12,7 +12,7 @@ namespace Quartz.Spi.CosmosDbJobStore
     /// Implements a simple distributed lock on top of CosmosDB. It is not a reentrant lock so you can't 
     /// acquire the lock more than once in the same thread of execution.
     /// </summary>
-    internal class LockManager : IDisposable
+    internal class LockManager : IAsyncDisposable
     {
         private static readonly TimeSpan SleepThreshold = TimeSpan.FromSeconds(1);
         private readonly int _lockTtl;
@@ -34,25 +34,24 @@ namespace Quartz.Spi.CosmosDbJobStore
             _lockTtl = lockTtlSeconds;
         }
 
-        
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
             EnsureObjectNotDisposed();
 
-            _disposed = true;
+            _disposed=true;
 
-            var locks = _lockRepository.GetAllByInstanceId(_instanceId).GetAwaiter().GetResult();
-            
+            var locks = await _lockRepository.GetAllByInstanceId(_instanceId);
+
             foreach (var lck in locks)
             {
-                if (!_lockRepository.TryDelete(lck.Id).GetAwaiter().GetResult())
+                if (!await _lockRepository.TryDelete(lck.Id))
                 {
                     _logger.Warn($"Unable to delete pending lock {lck.Id} from storage.");
                 }
             }
         }
 
-        public async Task<IDisposable> AcquireLock(LockType lockType)
+        public async Task<IAsyncDisposable> AcquireLock(LockType lockType)
         {
             while (true)
             {
@@ -79,7 +78,7 @@ namespace Quartz.Spi.CosmosDbJobStore
             }
         }
 
-        private class DisposableLock : IDisposable
+        private class DisposableLock : IAsyncDisposable
         {
             private static readonly ILog _logger = LogManager.GetLogger<LockManager>();
             
@@ -95,20 +94,19 @@ namespace Quartz.Spi.CosmosDbJobStore
                 _lck = lck;
             }
 
-
-            public void Dispose()
+            public async ValueTask DisposeAsync()
             {
                 if (_disposed)
                 {
                     throw new ObjectDisposedException(nameof(DisposableLock), $"This lock {_lck.Id} has already been disposed");
                 }
 
-                if (!_lockManager._lockRepository.TryDelete(_lck.Id).GetAwaiter().GetResult())
+                if (! await _lockManager._lockRepository.TryDelete(_lck.Id))
                 {
                     _logger.Warn($"Unable to delete pending lock {_lck.Id} from storage. It may have expired.");
                 }
-                
-                _disposed = true;
+
+                _disposed=true;
             }
         }
     }

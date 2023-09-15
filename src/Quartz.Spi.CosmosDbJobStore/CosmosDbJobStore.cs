@@ -21,7 +21,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         private const string AllGroupsPaused = "_$_ALL_GROUPS_PAUSED_$_";
 
         private static readonly ILog _logger = LogManager.GetLogger<CosmosDbJobStore>();
-        
+
         public static readonly DateTimeOffset? SchedulingSignalDateTime = new DateTimeOffset(1982, 6, 28, 0, 0, 0, TimeSpan.FromSeconds(0));
         
         private static long _fireTriggerRecordCounter = DateTimeOffset.UtcNow.Ticks;
@@ -88,7 +88,12 @@ namespace Quartz.Spi.CosmosDbJobStore
         /// After specified seconds, the lock will be deleted.
         /// </summary>
         public int LockTtlSeconds { get; set; }
-        
+
+        /// <summary>
+        /// After specified seconds, the fire trigger will be deleted.
+        /// </summary>
+        public int FireTriggerTtlSeconds { get; set; }
+
         /// <summary>
         ///     Gets or sets the number of retries before an error is logged for recovery operations.
         /// </summary>
@@ -200,6 +205,7 @@ namespace Quartz.Spi.CosmosDbJobStore
             RetryableActionErrorLogThreshold = 4;
             DbRetryInterval = TimeSpan.FromSeconds(5);
             LockTtlSeconds = 10 * 60; // 10 minutes
+            FireTriggerTtlSeconds = 10 * 60; // 10 minutes
             RequestTimeout = TimeSpan.FromSeconds(30);
             MaxConnectionLimit = 10;
             MaxRetryWaitTimeInSeconds = TimeSpan.FromSeconds(3);
@@ -321,7 +327,7 @@ namespace Quartz.Spi.CosmosDbJobStore
 
             await _schedulerRepository.Delete(PersistentScheduler.GetId(InstanceName, InstanceId));
             
-            _lockManager.Dispose();
+            await _lockManager.DisposeAsync();
         }
 
         public async Task StoreJobAndTrigger(IJobDetail newJob, IOperableTrigger newTrigger,
@@ -329,7 +335,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     await StoreJobInternal(newJob, false);
                     await StoreTriggerInternal(newTrigger, newJob, false, PersistentTriggerState.Waiting, false, false, cancellationToken);
@@ -361,7 +367,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using(await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     await StoreJobInternal(newJob, replaceExisting);
                 }
@@ -377,7 +383,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using(await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     foreach (var job in triggersAndJobs.Keys)
                     {
@@ -401,7 +407,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     return await RemoveJobWithTriggersInternal(jobKey.Name, jobKey.Group);
                 }
@@ -417,8 +423,8 @@ namespace Quartz.Spi.CosmosDbJobStore
             try
             {
                 var removed = false;
-                
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     foreach (var jobKey in jobKeys)
                     {
@@ -442,7 +448,7 @@ namespace Quartz.Spi.CosmosDbJobStore
 
         public async Task StoreTrigger(IOperableTrigger newTrigger, bool replaceExisting, CancellationToken cancellationToken = new CancellationToken())
         {
-            using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+            await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
             {
                 await StoreTriggerInternal(newTrigger, null, replaceExisting, PersistentTriggerState.Waiting, false, false, cancellationToken);
             }
@@ -452,7 +458,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var trigger = await _triggerRepository.Get(PersistentTriggerBase.GetId(InstanceName, triggerKey));
                     if (trigger == null)
@@ -474,8 +480,8 @@ namespace Quartz.Spi.CosmosDbJobStore
             try
             {
                 var removed = false;
-                
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     foreach (var triggerKey in triggerKeys)
                     {
@@ -502,7 +508,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var trigger = await _triggerRepository.Get(PersistentTriggerBase.GetId(InstanceName, triggerKey));
                     if (trigger == null)
@@ -559,7 +565,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     await _calendarRepository.DeleteAll();
                     await _firedTriggerRepository.DeleteAll();
@@ -580,7 +586,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var existingCal = await CalendarExists(calName, cancellationToken);
                     if (existingCal && !replaceExisting)
@@ -620,7 +626,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     if (await _triggerRepository.ExistsByCalendar(calName))
                     {
@@ -795,7 +801,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     await ResetTriggerFromErrorStateInternal(triggerKey.Name, triggerKey.Group);
                 }
@@ -827,7 +833,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     await PauseTriggerInternal(triggerKey.Name, triggerKey.Group);
                 }
@@ -842,7 +848,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     return await PauseTriggerGroupInternal(matcher);
                 }
@@ -884,7 +890,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var triggers = await GetTriggersForJob(jobKey, cancellationToken);
                     foreach (var operableTrigger in triggers)
@@ -901,7 +907,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var jobs = (await _jobRepository.GetAll()).Where(x => matcher.IsMatch(x.GetJobKey())).ToList(); // This is again not very optimal
                     foreach (var jobKey in jobs)
@@ -926,7 +932,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var trigger = await _triggerRepository.Get(PersistentTriggerBase.GetId(InstanceName, triggerKey));
                     await ResumeTriggerInternal(trigger);
@@ -942,7 +948,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     return await ResumeTriggersInternal(matcher);
                 }
@@ -962,7 +968,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var triggers = await _triggerRepository.GetAllByJob(jobKey.Name, jobKey.Group);
                     await Task.WhenAll(triggers.Select(ResumeTriggerInternal));
@@ -982,7 +988,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var jobs = (await _jobRepository.GetAll()).Where(x => matcher.IsMatch(x.GetJobKey())).ToList(); // This is not very optimal
                     foreach (var job in jobs)
@@ -1008,7 +1014,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var groupNames = await _triggerRepository.GetGroups();
 
@@ -1031,7 +1037,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var groupNames = await _triggerRepository.GetGroups();
                     await Task.WhenAll(groupNames.Select(groupName =>
@@ -1050,7 +1056,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     return await AcquireNextTriggersInternal(noLaterThan, maxCount, timeWindow);
                 }
@@ -1065,7 +1071,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var persistentTrigger = await _triggerRepository.Get(PersistentTriggerBase.GetId(InstanceName, trigger.Key));
 
@@ -1093,7 +1099,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     var results = new List<TriggerFiredResult>();
 
@@ -1128,7 +1134,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         {
             try
             {
-                using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                 {
                     await TriggeredJobCompleteInternal(trigger, jobDetail, triggerInstCode);
                 }
@@ -1159,7 +1165,7 @@ namespace Quartz.Spi.CosmosDbJobStore
                 }
                 else
                 {
-                    using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                    await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                     {
                         result = await RecoverMisfiredJobsInternal(false);
                     }
@@ -1235,18 +1241,21 @@ namespace Quartz.Spi.CosmosDbJobStore
 
                 if (jobDetail.ConcurrentExecutionDisallowed)
                 {
-                    if (persistentTrigger.State == PersistentTriggerState.Blocked)
+                    if (persistentTrigger != null)
                     {
-                        persistentTrigger.State = PersistentTriggerState.Waiting;
-                        await _triggerRepository.Update(persistentTrigger);
+                        if (persistentTrigger.State == PersistentTriggerState.Blocked)
+                        {
+                            persistentTrigger.State = PersistentTriggerState.Waiting;
+                            await _triggerRepository.Update(persistentTrigger);
+                        }
+
+                        if (persistentTrigger.State == PersistentTriggerState.PausedBlocked)
+                        {
+                            persistentTrigger.State = PersistentTriggerState.Paused;
+                            await _triggerRepository.Update(persistentTrigger);
+                        }
                     }
-                    
-                    if (persistentTrigger.State == PersistentTriggerState.PausedBlocked)
-                    {
-                        persistentTrigger.State = PersistentTriggerState.Paused;
-                        await _triggerRepository.Update(persistentTrigger);
-                    }
-                    
+
                     SignalSchedulingChangeOnTxCompletion(SchedulingSignalDateTime);
                 }
 
@@ -1312,9 +1321,9 @@ namespace Quartz.Spi.CosmosDbJobStore
                 }
             }
 
-            await _firedTriggerRepository.Update(
+             await _firedTriggerRepository.Update(
                 new PersistentFiredTrigger(trigger.FireInstanceId,
-                    TriggerFactory.CreateTrigger(trigger, PersistentTriggerState.Executing, InstanceName), job)
+                    TriggerFactory.CreateTrigger(trigger, PersistentTriggerState.Executing, InstanceName), job, FireTriggerTtlSeconds)
                 {
                     InstanceId = InstanceId,
                     State = PersistentTriggerState.Executing
@@ -1425,7 +1434,7 @@ namespace Quartz.Spi.CosmosDbJobStore
                     var operableTrigger = (IOperableTrigger) nextTrigger.GetTrigger();
                     operableTrigger.FireInstanceId = GetFiredTriggerRecordId();
 
-                    var firedTrigger = new PersistentFiredTrigger(operableTrigger.FireInstanceId, nextTrigger, job)
+                    var firedTrigger = new PersistentFiredTrigger(operableTrigger.FireInstanceId, nextTrigger, job, FireTriggerTtlSeconds)
                     {
                         State = PersistentTriggerState.Acquired,
                         InstanceId = InstanceId
@@ -1521,7 +1530,7 @@ namespace Quartz.Spi.CosmosDbJobStore
         
         private async Task RecoverJobs()
         {
-            using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+            await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
             {
                 var result = await _triggerRepository.UpdateAllByStates(PersistentTriggerState.Waiting, PersistentTriggerState.Acquired, PersistentTriggerState.Blocked);
                 
@@ -1715,14 +1724,16 @@ namespace Quartz.Spi.CosmosDbJobStore
             // and is almost never necessary). This must be done in a separate
             // transaction to prevent a deadlock under recovery conditions.
             IReadOnlyList<PersistentScheduler> failedSchedulers = null;
+            var isAnyFailedTrigger = false;
             if (!firstCheckIn)
             {
                 failedSchedulers = await ClusterCheckIn(cancellationToken).ConfigureAwait(false);
+                isAnyFailedTrigger = await IsAnyFailedTriggers();
             }
 
-            if (firstCheckIn || failedSchedulers != null && failedSchedulers.Count > 0)
+            if (firstCheckIn || (failedSchedulers != null && failedSchedulers.Count > 0) ||isAnyFailedTrigger)
             {
-                using (await _lockManager.AcquireLock(LockType.StateAccess))
+                await using (await _lockManager.AcquireLock(LockType.StateAccess))
                 {
                     // transStateOwner = true;
 
@@ -1739,7 +1750,7 @@ namespace Quartz.Spi.CosmosDbJobStore
 
                     if (failedSchedulers.Count > 0)
                     {
-                        using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                        await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
                         {
                             // getLockHandler().obtainLock(conn, LockJobAccess);
                             // transOwner = true;
@@ -1748,12 +1759,69 @@ namespace Quartz.Spi.CosmosDbJobStore
                             recovered = true;                        
                         }
                     }
+                    var failedTriggers = await GetFailedTriggers();
+                    LogWarnIfNonZero(failedTriggers.Count, $"ClusterManager: detected {failedTriggers.Count} failed triggers.");
+                    if (failedTriggers.Count > 0)
+                    {
+                        await using (await _lockManager.AcquireLock(LockType.TriggerAccess))
+                        {
+                            foreach (var trigger in failedTriggers)
+                            {
+                                switch (trigger.State)
+                                {
+                                    case PersistentTriggerState.Acquired:
+                                    case PersistentTriggerState.Executing:
+                                    case PersistentTriggerState.Blocked:
+                                        trigger.State = PersistentTriggerState.Waiting;
+                                        break;
+                                    case PersistentTriggerState.PausedBlocked:
+                                        trigger.State = PersistentTriggerState.Paused;
+                                        break;
+                                }
+
+                                await _triggerRepository.Update(trigger);
+                                recovered = true;
+                            }
+                        }
+                    }
                 }
             }
 
             firstCheckIn = false;
 
             return recovered;
+        }
+
+        private async Task<bool> IsAnyFailedTriggers()
+        {
+            var triggers = await _triggerRepository.GetAllByState(PersistentTriggerState.Blocked, PersistentTriggerState.PausedBlocked, PersistentTriggerState.Acquired);
+            foreach (var key in triggers.Select(trigger => trigger.GetTriggerKey()))
+            {
+                var fireTrigger = await _firedTriggerRepository.GetAllByTrigger(key.Name, key.Group);
+                if (fireTrigger == null || fireTrigger.Count == 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private async Task<IReadOnlyCollection<PersistentTriggerBase>> GetFailedTriggers()
+        {
+            var filedTriggers = new List<PersistentTriggerBase>();
+            var triggers = await _triggerRepository.GetAllByState(PersistentTriggerState.Blocked, PersistentTriggerState.PausedBlocked, PersistentTriggerState.Acquired);
+            foreach (var trigger in triggers)
+            {
+                var key = trigger.GetTriggerKey();
+                var fireTrigger = await _firedTriggerRepository.GetAllByTrigger(key.Name, key.Group);
+                if (fireTrigger == null || fireTrigger.Count == 0)
+                {
+                    filedTriggers.Add(trigger);
+                }
+            }
+
+            return filedTriggers;
         }
 
         /// <summary>
