@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using Newtonsoft.Json;
 using Quartz.Impl.Triggers;
 
 namespace Quartz.Spi.CosmosDbJobStore.Entities
@@ -31,13 +32,18 @@ namespace Quartz.Spi.CosmosDbJobStore.Entities
         public bool ConcurrentExecutionDisallowed { get; set; }
 
         public bool RequestsRecovery { get; set; }
+        /// <summary>
+        /// Used to set expiration policy for failover. [s]
+        /// </summary>
+        [JsonProperty(PropertyName = "ttl", NullValueHandling = NullValueHandling.Ignore)]
+        public int? Ttl { get; set; }
 
-        
+
         protected PersistentFiredTrigger()
         {
         }
         
-        public PersistentFiredTrigger(string firedInstanceId, PersistentTriggerBase trigger, PersistentJob job) : base(EntityType, GetId(trigger.InstanceName, firedInstanceId), trigger.InstanceName)
+        public PersistentFiredTrigger(string firedInstanceId, PersistentTriggerBase trigger, PersistentJob job, int? ttl) : base(EntityType, GetId(trigger.InstanceName, firedInstanceId), trigger.InstanceName)
         {
             FireInstanceId = firedInstanceId;
             TriggerName = trigger.Name;
@@ -46,6 +52,7 @@ namespace Quartz.Spi.CosmosDbJobStore.Entities
             Scheduled = trigger.NextFireTime;
             Priority = trigger.Priority;
             State = trigger.State;
+            Ttl = ttl;
 
             if (job != null)
             {
